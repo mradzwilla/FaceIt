@@ -10,16 +10,56 @@ import UIKit
 
 class ViewController: UIViewController {
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
+    @IBOutlet weak var faceView: FaceView!{
+        didSet{
+            let handler = #selector(FaceView.changeScale(byReactingTo:))
+            let pinchRecognizer = UIPinchGestureRecognizer(target: faceView, action: handler)
+            faceView.addGestureRecognizer(pinchRecognizer)
+            let tapRecognizer = UITapGestureRecognizer(target: self, action: #selector(toggleEyes(byReactingTo:)))
+            tapRecognizer.numberOfTapsRequired = 1
+            faceView.addGestureRecognizer(tapRecognizer)
+            let swipeUpRecognizer = UISwipeGestureRecognizer(target: self, action: #selector(increaseHappiness))
+            swipeUpRecognizer.direction = .up
+            faceView.addGestureRecognizer(swipeUpRecognizer)
+            let swipeDownRecognizer = UISwipeGestureRecognizer(target: self, action: #selector(decreaseHappiness))
+            swipeUpRecognizer.direction = .down
+            faceView.addGestureRecognizer(swipeDownRecognizer)
+            updateUI()
+        }
+    }
+    func increaseHappiness(){
+        expression = expression.happier
     }
 
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
+    func decreaseHappiness(){
+        expression = expression.sadder
     }
-
-
+    
+    
+    func toggleEyes(byReactingTo tapRecognizer: UITapGestureRecognizer){
+        if tapRecognizer.state == .ended{
+            let eyes: FacialExpression.Eyes = (expression.eyes == .Closed) ? .Open : .Closed
+            expression = FacialExpression(eyes: eyes, mouth: expression.mouth)
+        }
+    }
+    var expression = FacialExpression(eyes: .Closed, mouth: .Smirk){
+        didSet{
+            updateUI()
+        }
+    }
+    
+    private func updateUI(){
+        switch expression.eyes {
+        case .Open:
+            faceView?.eyesOpen = true
+        case .Closed:
+            faceView?.eyesOpen = false
+        case .Squinting:
+            faceView?.eyesOpen = false
+        }
+        faceView?.mouthCurvature = mouthCurvatures[expression.mouth] ?? 0.0
+    }
+    
+    private let mouthCurvatures = [FacialExpression.Mouth.Grin:0.5, .Frown:-1.0, .Smile:1.0,.Neutral:0.0, .Smirk: -0.5]
 }
 
